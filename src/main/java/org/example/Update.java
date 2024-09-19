@@ -55,19 +55,24 @@ public class Update extends Thread {
             String response = null;
             List<User> users = session.createQuery("FROM User").getResultList();
 
-            ArrayList<Key> keyArrayList = new ArrayList<>();
-            keyArrayList.add(new Key("locale", "ru"));
-            keyArrayList.add(new Key("beginTime", URLRequestResponse.getDate(-7)));
-            keyArrayList.add(new Key("endTime", URLRequestResponse.getDateCurrent()));
-            keyArrayList.add(new Key("sort", "date"));
-            keyArrayList.add(new Key("order", "desc"));
+//            ArrayList<Key> keyArrayList = new ArrayList<>();
+//            keyArrayList.add(new Key("locale", "ru"));
+//            keyArrayList.add(new Key("beginTime", URLRequestResponse.getDate(-7)));
+//            keyArrayList.add(new Key("endTime", URLRequestResponse.getDateCurrent()));
+//            keyArrayList.add(new Key("sort", "date"));
+//            keyArrayList.add(new Key("order", "desc"));
 //            keyArrayList.add(new Key("category", ""));
 //            keyArrayList.add(new Key("serviceName", ""));
+
+            ArrayList<Key> keyArrayList = new ArrayList<>();
+//            keyArrayList.add(new Key("serviceName", "redeem-notification-upd-198040528"));
+            keyArrayList.add(new Key("serviceName", "upd-198040528"));
+            keyArrayList.add(new Key("extension", "zip"));
 
             for (User user : users) {
                 if (user.getNameShopOzon() != null) {
                     if (user.getTokenClientOzon() != null) {
-                        generetedURL = URLRequestResponse.generateURL("wb", "getDocumentsList", user.getTokenClientOzon(), keyArrayList);
+                        generetedURL = URLRequestResponse.generateURL("wb", "getDocument", user.getTokenClientOzon(), keyArrayList);
                         try {
                             response = URLRequestResponse.getResponseFromURL(generetedURL, user.getTokenStatisticOzon());
                             System.out.println(response);
