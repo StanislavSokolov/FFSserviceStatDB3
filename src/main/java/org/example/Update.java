@@ -1,10 +1,17 @@
 package org.example;
+import org.example.com.Key;
+import org.example.model.User;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
+import org.json.JSONObject;
 
 import java.io.IOException;
+import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
+
+import static java.lang.Integer.parseInt;
 
 public class Update extends Thread {
 
@@ -26,7 +33,7 @@ public class Update extends Thread {
 
         SessionFactory sessionFactory = null;
         try {
-            sessionFactory = new Configuration().
+            sessionFactory = new Configuration().addAnnotatedClass(User.class).
                     //addAnnotatedClass(Item.class).
                     //addAnnotatedClass(Year.class).
                     setProperty("hibernate.driver_class", Settings.getProperties("hibernate.driver_class")).
@@ -44,7 +51,27 @@ public class Update extends Thread {
 
         try {
             session.beginTransaction();
-            System.out.println("Start");
+            URL generetedURL = null;
+            String response = null;
+            List<User> users = session.createQuery("FROM User").getResultList();
+
+            ArrayList<Key> keyArrayList = new ArrayList<>();
+            keyArrayList.add(new Key("locale", "ru"));
+
+            for (User user : users) {
+                if (user.getNameShopOzon() != null) {
+                    if (user.getTokenClientOzon() != null) {
+                        generetedURL = URLRequestResponse.generateURL("wb", "getDocumentsCategories", user.getTokenClientOzon(), keyArrayList);
+                        try {
+                            response = URLRequestResponse.getResponseFromURL(generetedURL, user.getTokenStatisticOzon());
+                            System.out.println(response);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                            e.getMessage();
+                        }
+                    }
+                }
+            }
             session.getTransaction().commit();
         } finally {
             sessionFactory.close();
