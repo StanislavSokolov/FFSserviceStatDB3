@@ -31,9 +31,9 @@ public class User {
     @Column(name = "password")
     private String password;
 
-//    @OneToMany(mappedBy = "owner", fetch = FetchType.EAGER)
-//    @Fetch(FetchMode.SELECT)
-//    private List<Product> products;
+    @OneToMany(mappedBy = "owner", fetch = FetchType.EAGER)
+    @Fetch(FetchMode.SELECT)
+    private List<Documents> documents;
 
     public User() {
     }
@@ -64,13 +64,13 @@ public class User {
         this.password = password;
     }
 
-//    public List<Product> getProducts() {
-//        return products;
-//    }
-//
-//    public void setProducts(List<Product> products) {
-//        this.products = products;
-//    }
+    public List<Documents> getDocuments() {
+        return documents;
+    }
+
+    public void setDocuments(List<Documents> documents) {
+        this.documents = documents;
+    }
 
     public String getNameShopWB() {
         return nameShopWB;
