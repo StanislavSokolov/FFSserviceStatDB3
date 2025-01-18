@@ -9,6 +9,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -16,6 +18,8 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import static java.lang.Integer.parseInt;
 
@@ -74,7 +78,7 @@ public class Update extends Thread {
                     if (user.getTokenClientOzon() != null) {
                         generetedURL = URLRequestResponse.generateURL("wb", "getDocumentsList", user.getTokenClientOzon(), keyArrayList);
                         try {
-                            response = URLRequestResponse.getResponseFromURL(generetedURL, user.getTokenStatisticOzon());
+                            response = URLRequestResponse.getResponseFromURL(generetedURL, user.getTokenClientOzon());
                             System.out.println(response);
                             if (!response.equals("{\"errors\":[\"(api-new) too many requests\"]}")) {
                                 JSONObject jsonObject1 = new JSONObject(response);
@@ -127,6 +131,31 @@ public class Update extends Thread {
 
     private boolean download() {
 
+        String path = "D:\\Отчеты\\";
+        String pathDocuments = path + "Документы\\";
+        String pathDocumentsZIP = path + "Документы (архив)\\";
+        if (!Files.isDirectory(Paths.get(path))) {
+            try {
+                Files.createDirectory(Paths.get(path));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        if (!Files.isDirectory(Paths.get(pathDocuments))) {
+            try {
+                Files.createDirectory(Paths.get(pathDocuments));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        if (!Files.isDirectory(Paths.get(pathDocumentsZIP))) {
+            try {
+                Files.createDirectory(Paths.get(pathDocumentsZIP));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
         SessionFactory sessionFactory = null;
         try {
             sessionFactory = new Configuration().addAnnotatedClass(User.class).
@@ -158,6 +187,9 @@ public class Update extends Thread {
                             for (Documents d : documents) {
                                 if (d.getDownload().equals("false")) {
 
+                                    String fileName = pathDocumentsZIP + d.getName() + ".zip";
+                                    String filePathCatalog = pathDocuments + d.getName() + "\\";
+
                                     URL generetedURL = null;
                                     String response = null;
                                     ArrayList<Key> keyArrayList = new ArrayList<>();
@@ -166,11 +198,35 @@ public class Update extends Thread {
 
                                     generetedURL = URLRequestResponse.generateURL("wb", "getDocument", user.getTokenClientOzon(), keyArrayList);
                                     try {
-                                        response = URLRequestResponse.getResponseFromURL(generetedURL, user.getTokenStatisticOzon());
+                                        response = URLRequestResponse.getResponseFromURL(generetedURL, user.getTokenClientOzon());
+                                        System.out.println(response);
                                         JSONObject jsonObject = new JSONObject(response);
                                         JSONObject jsonObject1 = (JSONObject) jsonObject.get("data");
+                                        // Декодируем данные из объекта JSON
                                         byte[] encodedString = Base64.getDecoder().decode(jsonObject1.get("document").toString());
-                                        Files.write(Paths.get("D:\\" + d.getName() + ".zip"), encodedString);
+                                        // Записываем в архив
+                                        Files.write(Paths.get(fileName), encodedString);
+                                        // Создаем для данных архива каталог
+                                        Files.createDirectory(Paths.get(filePathCatalog));
+                                        // Распоковываем архив https://metanit.com/java/tutorial/6.12.php?ysclid=m61vvx1urp606429458
+                                        ZipInputStream zin = new ZipInputStream(new FileInputStream(fileName));
+                                        ZipEntry entry;
+                                        String name;
+                                        while((entry=zin.getNextEntry())!=null){
+                                            // Получаем название файла
+                                            name = entry.getName();
+                                            System.out.printf("File name: %s \n", name);
+
+                                            // распаковка
+                                            FileOutputStream fout = new FileOutputStream(filePathCatalog + name);
+                                            for (int c = zin.read(); c != -1; c = zin.read()) {
+                                                fout.write(c);
+                                            }
+                                            fout.flush();
+                                            zin.closeEntry();
+                                            fout.close();
+                                        }
+                                        // Если всё прошло удачно, то информируем об этом БД
                                         session.createQuery("update Documents set download = 'true' WHERE serviceName = '" + d.getServiceName() + "'").executeUpdate();
                                         session.getTransaction().commit();
                                     } catch (IOException e) {
