@@ -33,7 +33,8 @@ public class Update extends Thread {
         super.run();
         while (true) {
             try {
-                if (!download()) update();
+//                if (!download()) update();
+                getReport();
                 sleep(10000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -252,5 +253,89 @@ public class Update extends Thread {
             sessionFactory.close();
         }
         return false;
+    }
+
+    private void getReport() {
+
+        SessionFactory sessionFactory = null;
+        try {
+            sessionFactory = new Configuration().addAnnotatedClass(User.class).
+                    addAnnotatedClass(Documents.class).
+                    setProperty("hibernate.driver_class", Settings.getProperties("hibernate.driver_class")).
+                    setProperty("hibernate.connection.url", Settings.getProperties("hibernate.connection.url")).
+                    setProperty("hibernate.connection.username", Settings.getProperties("hibernate.connection.username")).
+                    setProperty("hibernate.connection.password", Settings.getProperties("hibernate.connection.password")).
+                    setProperty("hibernate.dialect", Settings.getProperties("hibernate.dialect")).
+                    setProperty("hibernate.current_session_context_class", Settings.getProperties("hibernate.current_session_context_class")).
+                    setProperty("hibernate.show_sql", Settings.getProperties("hibernate.show_sql")).
+                    buildSessionFactory();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        Session session = sessionFactory.getCurrentSession();
+
+        try {
+            session.beginTransaction();
+            URL generetedURL = null;
+            String response = null;
+            List<User> users = session.createQuery("FROM User").getResultList();
+
+            ArrayList<Key> keyArrayList = new ArrayList<>();
+            keyArrayList.add(new Key("dateFrom", URLRequestResponse.getDate(-7)));
+            keyArrayList.add(new Key("limit", String.valueOf(100000)));
+            keyArrayList.add(new Key("dateTo", URLRequestResponse.getDateCurrent()));
+
+            for (User user : users) {
+                if (user.getNameShopOzon() != null) {
+                    if (user.getTokenClientOzon() != null) {
+                        generetedURL = URLRequestResponse.generateURL("wb", "getReportDetailByPeriod", user.getTokenStandartWB(), keyArrayList);
+                        try {
+                            response = URLRequestResponse.getResponseFromURL(generetedURL, user.getTokenStandartWB());
+                            System.out.println(response);
+//                            if (!response.equals("{\"errors\":[\"(api-new) too many requests\"]}")) {
+//                                JSONObject jsonObject1 = new JSONObject(response);
+//                                JSONObject jsonObject = jsonObject1.getJSONObject("data");
+//                                for (int i = 0; i < jsonObject.getJSONArray("documents").length(); i++) {
+//                                    List<Documents> documents = user.getDocuments();
+//                                    if (documents.isEmpty()) {
+//                                        Documents document = new Documents(jsonObject.getJSONArray("documents").getJSONObject(i).get("serviceName").toString(),
+//                                                jsonObject.getJSONArray("documents").getJSONObject(i).get("name").toString(),
+//                                                jsonObject.getJSONArray("documents").getJSONObject(i).get("category").toString(),
+//                                                jsonObject.getJSONArray("documents").getJSONObject(i).get("extensions").toString(),
+//                                                jsonObject.getJSONArray("documents").getJSONObject(i).get("creationTime").toString(),
+//                                                jsonObject.getJSONArray("documents").getJSONObject(i).get("viewed").toString(),
+//                                                "false", user);
+//                                        session.save(document);
+//                                    } else {
+//                                        boolean coincidence = false;
+//                                        for (Documents d : documents) {
+//                                            if (d.getServiceName().equals(jsonObject.getJSONArray("documents").getJSONObject(i).get("serviceName").toString())) {
+//                                                coincidence = true;
+//                                            }
+//                                        }
+//                                        if (!coincidence) {
+//                                            Documents document = new Documents(jsonObject.getJSONArray("documents").getJSONObject(i).get("serviceName").toString(),
+//                                                    jsonObject.getJSONArray("documents").getJSONObject(i).get("name").toString(),
+//                                                    jsonObject.getJSONArray("documents").getJSONObject(i).get("category").toString(),
+//                                                    jsonObject.getJSONArray("documents").getJSONObject(i).get("extensions").toString(),
+//                                                    jsonObject.getJSONArray("documents").getJSONObject(i).get("creationTime").toString(),
+//                                                    jsonObject.getJSONArray("documents").getJSONObject(i).get("viewed").toString(),
+//                                                    "false", user);
+//                                            session.save(document);
+//                                        }
+//                                    }
+//                                }
+//                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                            e.getMessage();
+                        }
+                    }
+                }
+            }
+            session.getTransaction().commit();
+        } finally {
+            sessionFactory.close();
+        }
     }
 }

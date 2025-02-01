@@ -79,6 +79,12 @@ public class URLRequestResponse {
                 dataMethod = "/api/v1/documents/download" + "?" + arrayList.get(0).getKey() + "=" + arrayList.get(0).getData()
                         + "&" + arrayList.get(1).getKey() + "=" + arrayList.get(1).getData();
             }
+            if (methodNumber.equals("getReportDetailByPeriod")) {
+                dataAPI = "https://statistics-api.wildberries.ru";
+                dataMethod = "/api/v5/supplier/reportDetailByPeriod" + "?" + arrayList.get(0).getKey() + "=" + arrayList.get(0).getData()
+                        + "&" + arrayList.get(1).getKey() + "=" + arrayList.get(1).getData()
+                        + "&" + arrayList.get(2).getKey() + "=" + arrayList.get(2).getData();
+            }
         } else if (shopNumber.equals("ozon")) {
             dataAPI = "https://api-seller.ozon.ru";
             if (methodNumber.equals("list"))
