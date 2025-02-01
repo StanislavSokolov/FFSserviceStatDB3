@@ -1,4 +1,8 @@
 package org.example;
+
+import org.apache.commons.compress.archivers.zip.*;
+import org.apache.commons.io.output.ByteArrayOutputStream;
+import org.apache.commons.lang3.builder.Builder;
 import org.example.com.Key;
 import org.example.model.Documents;
 import org.example.model.User;
@@ -6,7 +10,6 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.FileInputStream;
@@ -17,11 +20,10 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-
-import static java.lang.Integer.parseInt;
 
 public class Update extends Thread {
 
@@ -32,7 +34,7 @@ public class Update extends Thread {
         while (true) {
             try {
                 if (!download()) update();
-                sleep(50000);
+                sleep(10000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -66,7 +68,7 @@ public class Update extends Thread {
 
             ArrayList<Key> keyArrayList = new ArrayList<>();
             keyArrayList.add(new Key("locale", "ru"));
-            keyArrayList.add(new Key("beginTime", URLRequestResponse.getDate(-7)));
+            keyArrayList.add(new Key("beginTime", URLRequestResponse.getDate(-30)));
             keyArrayList.add(new Key("endTime", URLRequestResponse.getDateCurrent()));
             keyArrayList.add(new Key("sort", "date"));
             keyArrayList.add(new Key("order", "desc"));
@@ -187,14 +189,14 @@ public class Update extends Thread {
                             for (Documents d : documents) {
                                 if (d.getDownload().equals("false")) {
 
-                                    String fileName = pathDocumentsZIP + d.getName() + ".zip";
+                                    String fileName = pathDocumentsZIP + d.getName() + "." + d.getExtensions().substring(2, d.getExtensions().length() - 2);
                                     String filePathCatalog = pathDocuments + d.getName() + "\\";
 
                                     URL generetedURL = null;
                                     String response = null;
                                     ArrayList<Key> keyArrayList = new ArrayList<>();
                                     keyArrayList.add(new Key("serviceName", d.getServiceName()));
-                                    keyArrayList.add(new Key("extension", "zip"));
+                                    keyArrayList.add(new Key("extension", d.getExtensions().substring(2, d.getExtensions().length() - 2)));
 
                                     generetedURL = URLRequestResponse.generateURL("wb", "getDocument", user.getTokenClientOzon(), keyArrayList);
                                     try {
@@ -206,25 +208,30 @@ public class Update extends Thread {
                                         byte[] encodedString = Base64.getDecoder().decode(jsonObject1.get("document").toString());
                                         // Записываем в архив
                                         Files.write(Paths.get(fileName), encodedString);
-                                        // Создаем для данных архива каталог
-                                        Files.createDirectory(Paths.get(filePathCatalog));
-                                        // Распоковываем архив https://metanit.com/java/tutorial/6.12.php?ysclid=m61vvx1urp606429458
-                                        ZipInputStream zin = new ZipInputStream(new FileInputStream(fileName));
-                                        ZipEntry entry;
-                                        String name;
-                                        while((entry=zin.getNextEntry())!=null){
-                                            // Получаем название файла
-                                            name = entry.getName();
-                                            System.out.printf("File name: %s \n", name);
 
-                                            // распаковка
-                                            FileOutputStream fout = new FileOutputStream(filePathCatalog + name);
-                                            for (int c = zin.read(); c != -1; c = zin.read()) {
-                                                fout.write(c);
+                                        if ((d.getName().contains("УПД")) || (d.getName().contains("Акт взаимозачета"))) {
+                                            // Проверяем есть ли такой каталог
+                                            if (!Files.isDirectory(Paths.get(filePathCatalog)))
+                                                // Создаем для данных архива каталог
+                                                Files.createDirectory(Paths.get(filePathCatalog));
+                                            // Распоковываем архив https://metanit.com/java/tutorial/6.12.php?ysclid=m61vvx1urp606429458
+                                            ZipInputStream zin = new ZipInputStream(new FileInputStream(fileName));
+                                            ZipEntry entry;
+                                            String name;
+                                            while((entry=zin.getNextEntry())!=null){
+                                                // Получаем название файла
+                                                name = entry.getName();
+                                                System.out.printf("File name: %s \n", name);
+
+                                                // распаковка
+                                                FileOutputStream fout = new FileOutputStream(filePathCatalog + name);
+                                                for (int c = zin.read(); c != -1; c = zin.read()) {
+                                                    fout.write(c);
+                                                }
+                                                fout.flush();
+                                                zin.closeEntry();
+                                                fout.close();
                                             }
-                                            fout.flush();
-                                            zin.closeEntry();
-                                            fout.close();
                                         }
                                         // Если всё прошло удачно, то информируем об этом БД
                                         session.createQuery("update Documents set download = 'true' WHERE serviceName = '" + d.getServiceName() + "'").executeUpdate();
