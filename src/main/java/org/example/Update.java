@@ -33,8 +33,8 @@ public class Update extends Thread {
         super.run();
         while (true) {
             try {
-//                if (!download()) update();
-                getReport();
+                if (!download()) update();
+//                getReport();
                 sleep(10000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -69,7 +69,7 @@ public class Update extends Thread {
 
             ArrayList<Key> keyArrayList = new ArrayList<>();
             keyArrayList.add(new Key("locale", "ru"));
-            keyArrayList.add(new Key("beginTime", URLRequestResponse.getDate(-30)));
+            keyArrayList.add(new Key("beginTime", URLRequestResponse.getDate(-7)));
             keyArrayList.add(new Key("endTime", URLRequestResponse.getDateCurrent()));
             keyArrayList.add(new Key("sort", "date"));
             keyArrayList.add(new Key("order", "desc"));
@@ -190,7 +190,8 @@ public class Update extends Thread {
                             for (Documents d : documents) {
                                 if (d.getDownload().equals("false")) {
 
-                                    String fileName = pathDocumentsZIP + d.getName() + "." + d.getExtensions().substring(2, d.getExtensions().length() - 2);
+//                                    String fileName = pathDocumentsZIP + d.getName() + "." + d.getExtensions().substring(2, d.getExtensions().length() - 2);
+                                    String fileName = pathDocumentsZIP + d.getName() + "." + "zip";
                                     String filePathCatalog = pathDocuments + d.getName() + "\\";
 
                                     URL generetedURL = null;
