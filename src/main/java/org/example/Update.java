@@ -69,7 +69,7 @@ public class Update extends Thread {
 
             ArrayList<Key> keyArrayList = new ArrayList<>();
             keyArrayList.add(new Key("locale", "ru"));
-            keyArrayList.add(new Key("beginTime", URLRequestResponse.getDate(-7)));
+            keyArrayList.add(new Key("beginTime", URLRequestResponse.getDate(-100)));
             keyArrayList.add(new Key("endTime", URLRequestResponse.getDateCurrent()));
             keyArrayList.add(new Key("sort", "date"));
             keyArrayList.add(new Key("order", "desc"));
@@ -134,9 +134,16 @@ public class Update extends Thread {
 
     private boolean download() {
 
-        String path = "D:\\Отчеты\\";
-        String pathDocuments = path + "Документы\\";
-        String pathDocumentsZIP = path + "Документы (архив)\\";
+
+//        String path = "D:\\Отчеты\\";
+//        String pathDocuments = path + "Документы\\";
+//        String pathDocumentsZIP = path + "Документы (архив)\\";
+
+
+        String path = "/Документы/Отчеты/";
+        String pathDocuments = path + "Документы/";
+        String pathDocumentsZIP = path + "Архив/";
+
         if (!Files.isDirectory(Paths.get(path))) {
             try {
                 Files.createDirectory(Paths.get(path));
@@ -192,7 +199,8 @@ public class Update extends Thread {
 
 //                                    String fileName = pathDocumentsZIP + d.getName() + "." + d.getExtensions().substring(2, d.getExtensions().length() - 2);
                                     String fileName = pathDocumentsZIP + d.getName() + "." + "zip";
-                                    String filePathCatalog = pathDocuments + d.getName() + "\\";
+//                                    String filePathCatalog = pathDocuments + d.getName() + "\\";
+                                    String filePathCatalog = pathDocuments + d.getName() + "/";
 
                                     URL generetedURL = null;
                                     String response = null;
@@ -203,7 +211,7 @@ public class Update extends Thread {
                                     generetedURL = URLRequestResponse.generateURL("wb", "getDocument", user.getTokenClientOzon(), keyArrayList);
                                     try {
                                         response = URLRequestResponse.getResponseFromURL(generetedURL, user.getTokenClientOzon());
-                                        System.out.println(response);
+//                                        System.out.println(response);
                                         JSONObject jsonObject = new JSONObject(response);
                                         JSONObject jsonObject1 = (JSONObject) jsonObject.get("data");
                                         // Декодируем данные из объекта JSON
