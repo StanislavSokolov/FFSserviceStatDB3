@@ -9,8 +9,8 @@ import java.util.Properties;
 public class Settings {
     public static String getProperties(String key) throws IOException {
         Properties props = new Properties();
-//        try (InputStream in = Files.newInputStream(Paths.get("src/main/resources/hibernate.properties"))) {
-        try (InputStream in = Files.newInputStream(Paths.get("opt/java/hibernate.properties"))) {
+        try (InputStream in = Files.newInputStream(Paths.get("src/main/resources/hibernate.properties"))) {
+//        try (InputStream in = Files.newInputStream(Paths.get("opt/java/hibernate.properties"))) {
             props.load(in);
         }
         String s = null;

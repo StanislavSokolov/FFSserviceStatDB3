@@ -33,8 +33,8 @@ public class Update extends Thread {
         super.run();
         while (true) {
             try {
-                if (!download()) update();
-//                getReport();
+//                if (!download()) update();
+                getReport();
                 sleep(10000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -135,14 +135,14 @@ public class Update extends Thread {
     private boolean download() {
 
 
-//        String path = "D:\\Отчеты\\";
-//        String pathDocuments = path + "Документы\\";
-//        String pathDocumentsZIP = path + "Документы (архив)\\";
+        String path = "D:\\Отчеты\\";
+        String pathDocuments = path + "Документы\\";
+        String pathDocumentsZIP = path + "Документы (архив)\\";
 
 
-        String path = "/Документы/Отчеты/";
-        String pathDocuments = path + "Документы/";
-        String pathDocumentsZIP = path + "Архив/";
+//        String path = "/Документы/Отчеты/";
+//        String pathDocuments = path + "Документы/";
+//        String pathDocumentsZIP = path + "Архив/";
 
         if (!Files.isDirectory(Paths.get(path))) {
             try {
@@ -290,8 +290,8 @@ public class Update extends Thread {
             List<User> users = session.createQuery("FROM User").getResultList();
 
             ArrayList<Key> keyArrayList = new ArrayList<>();
-            keyArrayList.add(new Key("dateFrom", URLRequestResponse.getDate(-7)));
-            keyArrayList.add(new Key("limit", String.valueOf(100000)));
+            keyArrayList.add(new Key("dateFrom", URLRequestResponse.getDate(-1)));
+            keyArrayList.add(new Key("limit", String.valueOf(10)));
             keyArrayList.add(new Key("dateTo", URLRequestResponse.getDateCurrent()));
 
             for (User user : users) {
@@ -301,40 +301,13 @@ public class Update extends Thread {
                         try {
                             response = URLRequestResponse.getResponseFromURL(generetedURL, user.getTokenStandartWB());
                             System.out.println(response);
-//                            if (!response.equals("{\"errors\":[\"(api-new) too many requests\"]}")) {
-//                                JSONObject jsonObject1 = new JSONObject(response);
-//                                JSONObject jsonObject = jsonObject1.getJSONObject("data");
-//                                for (int i = 0; i < jsonObject.getJSONArray("documents").length(); i++) {
-//                                    List<Documents> documents = user.getDocuments();
-//                                    if (documents.isEmpty()) {
-//                                        Documents document = new Documents(jsonObject.getJSONArray("documents").getJSONObject(i).get("serviceName").toString(),
-//                                                jsonObject.getJSONArray("documents").getJSONObject(i).get("name").toString(),
-//                                                jsonObject.getJSONArray("documents").getJSONObject(i).get("category").toString(),
-//                                                jsonObject.getJSONArray("documents").getJSONObject(i).get("extensions").toString(),
-//                                                jsonObject.getJSONArray("documents").getJSONObject(i).get("creationTime").toString(),
-//                                                jsonObject.getJSONArray("documents").getJSONObject(i).get("viewed").toString(),
-//                                                "false", user);
-//                                        session.save(document);
-//                                    } else {
-//                                        boolean coincidence = false;
-//                                        for (Documents d : documents) {
-//                                            if (d.getServiceName().equals(jsonObject.getJSONArray("documents").getJSONObject(i).get("serviceName").toString())) {
-//                                                coincidence = true;
-//                                            }
-//                                        }
-//                                        if (!coincidence) {
-//                                            Documents document = new Documents(jsonObject.getJSONArray("documents").getJSONObject(i).get("serviceName").toString(),
-//                                                    jsonObject.getJSONArray("documents").getJSONObject(i).get("name").toString(),
-//                                                    jsonObject.getJSONArray("documents").getJSONObject(i).get("category").toString(),
-//                                                    jsonObject.getJSONArray("documents").getJSONObject(i).get("extensions").toString(),
-//                                                    jsonObject.getJSONArray("documents").getJSONObject(i).get("creationTime").toString(),
-//                                                    jsonObject.getJSONArray("documents").getJSONObject(i).get("viewed").toString(),
-//                                                    "false", user);
-//                                            session.save(document);
-//                                        }
-//                                    }
-//                                }
-//                            }
+                            if (!response.equals("{\"errors\":[\"(api-new) too many requests\"]}")) {
+                                JSONObject jsonObject = new JSONObject("{\"data\":" + response + "}");
+                                for (int i = 0; i < jsonObject.getJSONArray("data").length(); i++) {
+                                    JSONObject jsonObject1 = (JSONObject) jsonObject.getJSONArray("data").get(i);
+                                    System.out.println(jsonObject1.get("subject_name") + " " + jsonObject1.get("ppvz_office_name"));
+                                }
+                            }
                         } catch (IOException e) {
                             e.printStackTrace();
                             e.getMessage();
