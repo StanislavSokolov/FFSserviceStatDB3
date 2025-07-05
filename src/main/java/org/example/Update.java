@@ -21,9 +21,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
-import java.util.zip.ZipInputStream;
 
 public class Update extends Thread {
 
@@ -69,7 +67,7 @@ public class Update extends Thread {
 
             ArrayList<Key> keyArrayList = new ArrayList<>();
             keyArrayList.add(new Key("locale", "ru"));
-            keyArrayList.add(new Key("beginTime", URLRequestResponse.getDate(-15)));
+            keyArrayList.add(new Key("beginTime", URLRequestResponse.getDate(-150)));
             keyArrayList.add(new Key("endTime", URLRequestResponse.getDateCurrent()));
             keyArrayList.add(new Key("sort", "date"));
             keyArrayList.add(new Key("order", "desc"));
@@ -199,7 +197,14 @@ public class Update extends Thread {
 
 //                                    String fileName = pathDocumentsZIP + d.getName() + "." + d.getExtensions().substring(2, d.getExtensions().length() - 2);
                                     d.setName(d.getName().replace("/", "_")); // необходима для загрузки "Реестр продаж юрлицам № 371119/2 от 01.07.2025", где есть символ "/"
-                                    String fileName = pathDocumentsZIP + d.getName() + "." + "zip";
+
+                                    String fileName;
+                                    if (d.getExtensions().equals("[\"xml\"]"))
+                                       fileName = pathDocumentsZIP + d.getName();
+                                    else
+                                       fileName = pathDocumentsZIP + d.getName() + "." + "zip";
+                                    System.out.println(fileName);
+//                                    String fileName = pathDocumentsZIP + d.getName() + "." + "zip";
 //                                    String filePathCatalog = pathDocuments + d.getName() + "\\";
                                     String filePathCatalog = pathDocuments + d.getName() + "/";
 
@@ -208,8 +213,6 @@ public class Update extends Thread {
                                     ArrayList<Key> keyArrayList = new ArrayList<>();
                                     keyArrayList.add(new Key("serviceName", d.getServiceName()));
                                     keyArrayList.add(new Key("extension", d.getExtensions().substring(2, d.getExtensions().length() - 2)));
-
-                                    System.out.println(keyArrayList.get(0).getData());
 
                                     generetedURL = URLRequestResponse.generateURL("wb", "getDocument", user.getTokenClientOzon(), keyArrayList);
                                     try {
