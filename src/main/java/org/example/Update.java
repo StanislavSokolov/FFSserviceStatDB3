@@ -12,18 +12,16 @@ import org.hibernate.cfg.Configuration;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
+import java.util.zip.ZipException;
 
 public class Update extends Thread {
 
@@ -33,10 +31,10 @@ public class Update extends Thread {
         super.run();
         while (true) {
             try {
-//                if (!download()) update();
-                getReport();
+                if (!download()) update();
+//                getReport();
                 sleep(10000);
-            } catch (InterruptedException e) {
+            } catch (InterruptedException | ZipException e) {
                 e.printStackTrace();
             }
         }
@@ -69,7 +67,7 @@ public class Update extends Thread {
 
             ArrayList<Key> keyArrayList = new ArrayList<>();
             keyArrayList.add(new Key("locale", "ru"));
-            keyArrayList.add(new Key("beginTime", URLRequestResponse.getDate(-100)));
+            keyArrayList.add(new Key("beginTime", URLRequestResponse.getDate(-150)));
             keyArrayList.add(new Key("endTime", URLRequestResponse.getDateCurrent()));
             keyArrayList.add(new Key("sort", "date"));
             keyArrayList.add(new Key("order", "desc"));
@@ -132,7 +130,7 @@ public class Update extends Thread {
 
 
 
-    private boolean download() {
+    private boolean download() throws ZipException {
 
 
         String path = "D:\\Отчеты\\";
@@ -198,7 +196,15 @@ public class Update extends Thread {
                                 if (d.getDownload().equals("false")) {
 
 //                                    String fileName = pathDocumentsZIP + d.getName() + "." + d.getExtensions().substring(2, d.getExtensions().length() - 2);
-                                    String fileName = pathDocumentsZIP + d.getName() + "." + "zip";
+                                    d.setName(d.getName().replace("/", "_")); // необходима для загрузки "Реестр продаж юрлицам № 371119/2 от 01.07.2025", где есть символ "/"
+
+                                    String fileName;
+                                    if (d.getExtensions().equals("[\"xml\"]"))
+                                       fileName = pathDocumentsZIP + d.getName();
+                                    else
+                                       fileName = pathDocumentsZIP + d.getName() + "." + "zip";
+                                    System.out.println(fileName);
+//                                    String fileName = pathDocumentsZIP + d.getName() + "." + "zip";
 //                                    String filePathCatalog = pathDocuments + d.getName() + "\\";
                                     String filePathCatalog = pathDocuments + d.getName() + "/";
 
@@ -211,12 +217,13 @@ public class Update extends Thread {
                                     generetedURL = URLRequestResponse.generateURL("wb", "getDocument", user.getTokenClientOzon(), keyArrayList);
                                     try {
                                         response = URLRequestResponse.getResponseFromURL(generetedURL, user.getTokenClientOzon());
-//                                        System.out.println(response);
+                                        System.out.println(response);
                                         JSONObject jsonObject = new JSONObject(response);
                                         JSONObject jsonObject1 = (JSONObject) jsonObject.get("data");
                                         // Декодируем данные из объекта JSON
                                         byte[] encodedString = Base64.getDecoder().decode(jsonObject1.get("document").toString());
                                         // Записываем в архив
+                                        System.out.println(fileName);
                                         Files.write(Paths.get(fileName), encodedString);
 
                                         if ((d.getName().contains("УПД")) || (d.getName().contains("Акт взаимозачета"))) {
@@ -224,28 +231,58 @@ public class Update extends Thread {
                                             if (!Files.isDirectory(Paths.get(filePathCatalog)))
                                                 // Создаем для данных архива каталог
                                                 Files.createDirectory(Paths.get(filePathCatalog));
-                                            // Распоковываем архив https://metanit.com/java/tutorial/6.12.php?ysclid=m61vvx1urp606429458
-                                            ZipInputStream zin = new ZipInputStream(new FileInputStream(fileName));
-                                            ZipEntry entry;
-                                            String name;
-                                            while((entry=zin.getNextEntry())!=null){
-                                                // Получаем название файла
-                                                name = entry.getName();
-                                                System.out.printf("File name: %s \n", name);
+//                                            // Распоковываем архив https://metanit.com/java/tutorial/6.12.php?ysclid=m61vvx1urp606429458
+//                                            ZipInputStream zin = new ZipInputStream(new FileInputStream(fileName));
+//                                            ZipEntry entry;
+//                                            String name;
+//                                            while((entry=zin.getNextEntry())!=null){
+//                                                // Получаем название файла
+//                                                name = entry.getName();
+//                                                System.out.printf("File name: %s \n", name);
+//
+//                                                // распаковка
+//                                                FileOutputStream fout = new FileOutputStream(filePathCatalog + name);
+//                                                for (int c = zin.read(); c != -1; c = zin.read()) {
+//                                                    fout.write(c);
+//                                                }
+//                                                fout.flush();
+//                                                zin.closeEntry();
+//                                                fout.close();
+//                                            }
+                                            try (ZipFile zipFile = new ZipFile(new File(fileName))) {
+                                                Enumeration<ZipArchiveEntry> entries = zipFile.getEntries();
+                                                while (entries.hasMoreElements()) {
+                                                    ZipArchiveEntry entry = entries.nextElement();
+                                                    // Получаем название файла
+                                                    String name = entry.getName();
+                                                    System.out.printf("File name: %s \n", name);
 
-                                                // распаковка
-                                                FileOutputStream fout = new FileOutputStream(filePathCatalog + name);
-                                                for (int c = zin.read(); c != -1; c = zin.read()) {
-                                                    fout.write(c);
+                                                    // Путь к целевому файлу
+                                                    Path filePath = Paths.get(filePathCatalog, name);
+
+                                                    // Распаковка
+                                                    try (InputStream in = zipFile.getInputStream(entry);
+                                                         OutputStream out = new FileOutputStream(filePath.toFile())) {
+                                                        byte[] buffer = new byte[1024];
+                                                        int len;
+                                                        while ((len = in.read(buffer)) > 0) {
+                                                            out.write(buffer, 0, len);
+                                                        }
+                                                    }
                                                 }
-                                                fout.flush();
-                                                zin.closeEntry();
-                                                fout.close();
+                                            } catch (IOException e) {
+                                                e.printStackTrace();
                                             }
                                         }
                                         // Если всё прошло удачно, то информируем об этом БД
                                         session.createQuery("update Documents set download = 'true' WHERE serviceName = '" + d.getServiceName() + "'").executeUpdate();
                                         session.getTransaction().commit();
+                                    } catch (ZipException e) {
+                                        if (e.getMessage().contains("only DEFLATED entries can have EXT descriptor")) {
+                                            System.err.println("Пропускаем запись, которая не поддерживает EXT descriptor: " + e.getMessage());
+                                        } else {
+                                            throw e; // Перебрасываем остальные исключения
+                                        }
                                     } catch (IOException e) {
                                         e.printStackTrace();
                                         e.getMessage();

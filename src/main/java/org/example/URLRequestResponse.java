@@ -78,6 +78,7 @@ public class URLRequestResponse {
                 dataAPI = "https://documents-api.wildberries.ru";
                 dataMethod = "/api/v1/documents/download" + "?" + arrayList.get(0).getKey() + "=" + arrayList.get(0).getData()
                         + "&" + arrayList.get(1).getKey() + "=" + arrayList.get(1).getData();
+                dataMethod = dataMethod.replace(" ", "+");
             }
             if (methodNumber.equals("getReportDetailByPeriod")) {
                 dataAPI = "https://statistics-api.wildberries.ru";
@@ -96,6 +97,8 @@ public class URLRequestResponse {
             if (methodNumber.equals("import/prices"))
                 dataMethod = "/v1/product/import/prices";
         }
+
+        System.out.println(dataMethod);
 
         URL url = null;
         try {
