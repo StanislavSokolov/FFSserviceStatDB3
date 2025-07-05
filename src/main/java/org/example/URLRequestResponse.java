@@ -78,6 +78,7 @@ public class URLRequestResponse {
                 dataAPI = "https://documents-api.wildberries.ru";
                 dataMethod = "/api/v1/documents/download" + "?" + arrayList.get(0).getKey() + "=" + arrayList.get(0).getData()
                         + "&" + arrayList.get(1).getKey() + "=" + arrayList.get(1).getData();
+//                dataMethod = "/api/v1/documents/download?serviceName=UPD po markirovke-29067678&extension=xml";
             }
             if (methodNumber.equals("getReportDetailByPeriod")) {
                 dataAPI = "https://statistics-api.wildberries.ru";

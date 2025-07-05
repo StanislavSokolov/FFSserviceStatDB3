@@ -23,6 +23,7 @@ import java.util.Base64;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipException;
 import java.util.zip.ZipInputStream;
 
 public class Update extends Thread {
@@ -33,10 +34,10 @@ public class Update extends Thread {
         super.run();
         while (true) {
             try {
-//                if (!download()) update();
-                getReport();
+                if (!download()) update();
+//                getReport();
                 sleep(10000);
-            } catch (InterruptedException e) {
+            } catch (InterruptedException | ZipException e) {
                 e.printStackTrace();
             }
         }
@@ -69,7 +70,7 @@ public class Update extends Thread {
 
             ArrayList<Key> keyArrayList = new ArrayList<>();
             keyArrayList.add(new Key("locale", "ru"));
-            keyArrayList.add(new Key("beginTime", URLRequestResponse.getDate(-100)));
+            keyArrayList.add(new Key("beginTime", URLRequestResponse.getDate(-15)));
             keyArrayList.add(new Key("endTime", URLRequestResponse.getDateCurrent()));
             keyArrayList.add(new Key("sort", "date"));
             keyArrayList.add(new Key("order", "desc"));
@@ -132,7 +133,7 @@ public class Update extends Thread {
 
 
 
-    private boolean download() {
+    private boolean download() throws ZipException {
 
 
         String path = "D:\\Отчеты\\";
@@ -208,10 +209,12 @@ public class Update extends Thread {
                                     keyArrayList.add(new Key("serviceName", d.getServiceName()));
                                     keyArrayList.add(new Key("extension", d.getExtensions().substring(2, d.getExtensions().length() - 2)));
 
+                                    System.out.println(keyArrayList.get(0).getData());
+
                                     generetedURL = URLRequestResponse.generateURL("wb", "getDocument", user.getTokenClientOzon(), keyArrayList);
                                     try {
                                         response = URLRequestResponse.getResponseFromURL(generetedURL, user.getTokenClientOzon());
-//                                        System.out.println(response);
+                                        System.out.println(response);
                                         JSONObject jsonObject = new JSONObject(response);
                                         JSONObject jsonObject1 = (JSONObject) jsonObject.get("data");
                                         // Декодируем данные из объекта JSON
@@ -246,6 +249,12 @@ public class Update extends Thread {
                                         // Если всё прошло удачно, то информируем об этом БД
                                         session.createQuery("update Documents set download = 'true' WHERE serviceName = '" + d.getServiceName() + "'").executeUpdate();
                                         session.getTransaction().commit();
+                                    } catch (ZipException e) {
+                                        if (e.getMessage().contains("only DEFLATED entries can have EXT descriptor")) {
+                                            System.err.println("Пропускаем запись, которая не поддерживает EXT descriptor: " + e.getMessage());
+                                        } else {
+                                            throw e; // Перебрасываем остальные исключения
+                                        }
                                     } catch (IOException e) {
                                         e.printStackTrace();
                                         e.getMessage();
