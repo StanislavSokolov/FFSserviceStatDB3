@@ -12,11 +12,10 @@ import org.hibernate.cfg.Configuration;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -199,6 +198,7 @@ public class Update extends Thread {
                                 if (d.getDownload().equals("false")) {
 
 //                                    String fileName = pathDocumentsZIP + d.getName() + "." + d.getExtensions().substring(2, d.getExtensions().length() - 2);
+                                    d.setName(d.getName().replace("/", "_")); // необходима для загрузки "Реестр продаж юрлицам № 371119/2 от 01.07.2025", где есть символ "/"
                                     String fileName = pathDocumentsZIP + d.getName() + "." + "zip";
 //                                    String filePathCatalog = pathDocuments + d.getName() + "\\";
                                     String filePathCatalog = pathDocuments + d.getName() + "/";
@@ -220,6 +220,7 @@ public class Update extends Thread {
                                         // Декодируем данные из объекта JSON
                                         byte[] encodedString = Base64.getDecoder().decode(jsonObject1.get("document").toString());
                                         // Записываем в архив
+                                        System.out.println(fileName);
                                         Files.write(Paths.get(fileName), encodedString);
 
                                         if ((d.getName().contains("УПД")) || (d.getName().contains("Акт взаимозачета"))) {
@@ -227,23 +228,47 @@ public class Update extends Thread {
                                             if (!Files.isDirectory(Paths.get(filePathCatalog)))
                                                 // Создаем для данных архива каталог
                                                 Files.createDirectory(Paths.get(filePathCatalog));
-                                            // Распоковываем архив https://metanit.com/java/tutorial/6.12.php?ysclid=m61vvx1urp606429458
-                                            ZipInputStream zin = new ZipInputStream(new FileInputStream(fileName));
-                                            ZipEntry entry;
-                                            String name;
-                                            while((entry=zin.getNextEntry())!=null){
-                                                // Получаем название файла
-                                                name = entry.getName();
-                                                System.out.printf("File name: %s \n", name);
+//                                            // Распоковываем архив https://metanit.com/java/tutorial/6.12.php?ysclid=m61vvx1urp606429458
+//                                            ZipInputStream zin = new ZipInputStream(new FileInputStream(fileName));
+//                                            ZipEntry entry;
+//                                            String name;
+//                                            while((entry=zin.getNextEntry())!=null){
+//                                                // Получаем название файла
+//                                                name = entry.getName();
+//                                                System.out.printf("File name: %s \n", name);
+//
+//                                                // распаковка
+//                                                FileOutputStream fout = new FileOutputStream(filePathCatalog + name);
+//                                                for (int c = zin.read(); c != -1; c = zin.read()) {
+//                                                    fout.write(c);
+//                                                }
+//                                                fout.flush();
+//                                                zin.closeEntry();
+//                                                fout.close();
+//                                            }
+                                            try (ZipFile zipFile = new ZipFile(new File(fileName))) {
+                                                Enumeration<ZipArchiveEntry> entries = zipFile.getEntries();
+                                                while (entries.hasMoreElements()) {
+                                                    ZipArchiveEntry entry = entries.nextElement();
+                                                    // Получаем название файла
+                                                    String name = entry.getName();
+                                                    System.out.printf("File name: %s \n", name);
 
-                                                // распаковка
-                                                FileOutputStream fout = new FileOutputStream(filePathCatalog + name);
-                                                for (int c = zin.read(); c != -1; c = zin.read()) {
-                                                    fout.write(c);
+                                                    // Путь к целевому файлу
+                                                    Path filePath = Paths.get(filePathCatalog, name);
+
+                                                    // Распаковка
+                                                    try (InputStream in = zipFile.getInputStream(entry);
+                                                         OutputStream out = new FileOutputStream(filePath.toFile())) {
+                                                        byte[] buffer = new byte[1024];
+                                                        int len;
+                                                        while ((len = in.read(buffer)) > 0) {
+                                                            out.write(buffer, 0, len);
+                                                        }
+                                                    }
                                                 }
-                                                fout.flush();
-                                                zin.closeEntry();
-                                                fout.close();
+                                            } catch (IOException e) {
+                                                e.printStackTrace();
                                             }
                                         }
                                         // Если всё прошло удачно, то информируем об этом БД
