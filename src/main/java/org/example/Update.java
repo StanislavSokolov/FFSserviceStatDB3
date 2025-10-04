@@ -25,7 +25,8 @@ import java.util.zip.ZipException;
 
 public class Update extends Thread {
 
-    private int BEGIN_TIME = -153;
+    private int WEEKS = 27; // It's half year
+    private int BEGIN_TIME = (-7) * WEEKS + 1;
     private int END_TIME = -6;
 
     @Override
