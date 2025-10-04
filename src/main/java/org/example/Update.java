@@ -25,13 +25,22 @@ import java.util.zip.ZipException;
 
 public class Update extends Thread {
 
+    private int BEGIN_TIME = -153;
+    private int END_TIME = -6;
+
     @Override
     public void run() {
+
+        int count = BEGIN_TIME - 7;
 
         super.run();
         while (true) {
             try {
-                if (!download()) update();
+                if (!download()) {
+                    if (count >= END_TIME) count = BEGIN_TIME; else count = count + 7;
+//                    System.out.println("COUNT = " + count);
+                    update(count);
+                }
 //                getReport();
                 sleep(10000);
             } catch (InterruptedException | ZipException e) {
@@ -40,7 +49,7 @@ public class Update extends Thread {
         }
     }
 
-    private void update() {
+    private void update(int count) {
 
         SessionFactory sessionFactory = null;
         try {
@@ -67,8 +76,8 @@ public class Update extends Thread {
 
             ArrayList<Key> keyArrayList = new ArrayList<>();
             keyArrayList.add(new Key("locale", "ru"));
-            keyArrayList.add(new Key("beginTime", URLRequestResponse.getDate(-150)));
-            keyArrayList.add(new Key("endTime", URLRequestResponse.getDateCurrent()));
+            keyArrayList.add(new Key("beginTime", URLRequestResponse.getDate(count)));
+            keyArrayList.add(new Key("endTime", URLRequestResponse.getDate(count + 6)));
             keyArrayList.add(new Key("sort", "date"));
             keyArrayList.add(new Key("order", "desc"));
 //            keyArrayList.add(new Key("category", ""));
